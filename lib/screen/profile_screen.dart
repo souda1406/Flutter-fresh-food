@@ -1,6 +1,8 @@
-// lib/screens/profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_app_food/screen/login_screen.dart';
+
+import '../services/auth_service.dart'; // Import AuthService
+import 'address_screen.dart'; // Import AddressScreen
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -11,29 +13,53 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String selectedLanguage = 'English';
+  final AuthService _authService = AuthService(); // Instantiate AuthService
+
+  // Declare TextEditingControllers for the profile edit fields
+  late final TextEditingController _fullNameController;
+  late final TextEditingController _emailEditController;
+  late final TextEditingController _phoneController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize controllers with initial values
+    _fullNameController = TextEditingController(text: 'John Doe'); // Placeholder
+    _emailEditController = TextEditingController(text: _authService.currentUser?.email ?? 'N/A');
+    _phoneController = TextEditingController(text: '+1 234 567 8900'); // Placeholder
+  }
+
+  @override
+  void dispose() {
+    // Dispose controllers to free up resources
+    _fullNameController.dispose();
+    _emailEditController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
 
   void _showLogoutDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Logout'),
-          content: Text('Are you sure you want to logout?'),
+          title: const Text('Logout'),
+          content: const Text('Are you sure you want to logout?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop();
-                _performLogout();
+                Navigator.of(context).pop(); // Close the dialog
+                _performLogout(); // Perform the logout action
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
               ),
-              child: Text('Logout'),
+              child: const Text('Logout'),
             ),
           ],
         );
@@ -41,22 +67,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _performLogout() {
+  void _performLogout() async { // Made async to await logout
+    // Perform logout operation using AuthService
+    await _authService.logout();
+
     // Show logout success message
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Text('Successfully logged out'),
         backgroundColor: Colors.green,
         duration: Duration(seconds: 2),
       ),
     );
-    
-    // Here you would typically:
-    // 1. Clear user session/tokens
-    // 2. Navigate to login screen
-    // 3. Clear user data from storage
-    Navigator.of(context).pushReplacement(
+
+    // Navigate to login screen and clear all previous routes
+    Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (ctx) =>  LoginScreen()),
+      (Route<dynamic> route) => false, // This predicate removes all previous routes
     );
   }
 
@@ -66,27 +93,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
       isScrollControlled: true,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Text(
+                const Text(
                   'Edit Profile',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Spacer(),
+                const Spacer(),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: Icon(Icons.close),
+                  icon: const Icon(Icons.close),
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Center(
               child: Stack(
                 children: [
@@ -94,8 +121,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     radius: 50,
                     backgroundColor: Colors.green,
                     child: Text(
-                      'JD',
-                      style: TextStyle(
+                      AuthService().currentUser?.email[0].toUpperCase() ?? '?', // Use current user's initial
+                      style: const TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -106,12 +133,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     bottom: 0,
                     right: 0,
                     child: Container(
-                      padding: EdgeInsets.all(4),
-                      decoration: BoxDecoration(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
                         color: Colors.green,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.camera_alt,
                         color: Colors.white,
                         size: 20,
@@ -121,41 +148,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
             TextField(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Full Name',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.person),
               ),
-              controller: TextEditingController(text: 'John Doe'),
+              controller: _fullNameController, // Use the managed controller
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             TextField(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Email',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.email),
               ),
-              controller: TextEditingController(text: 'john.doe@email.com'),
+              controller: _emailEditController, // Use the managed controller
+              readOnly: true, // Email is usually not editable via profile
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             TextField(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Phone',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.phone),
               ),
-              controller: TextEditingController(text: '+1 234 567 8900'),
+              controller: _phoneController, // Use the managed controller
             ),
-            Spacer(),
+            const Spacer(),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
+                  // In a real app, you would save these values
+                  print('Full Name: ${_fullNameController.text}');
+                  print('Email: ${_emailEditController.text}');
+                  print('Phone: ${_phoneController.text}');
+
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    const SnackBar(
                       content: Text('Profile updated successfully'),
                       backgroundColor: Colors.green,
                     ),
@@ -164,9 +197,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: Text('Save Changes'),
+                child: const Text('Save Changes'),
               ),
             ),
           ],
@@ -179,24 +212,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Select Language',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ...['English', 'Spanish', 'French', 'German', 'Chinese'].map(
               (language) => ListTile(
                 title: Text(language),
                 trailing: selectedLanguage == language
-                    ? Icon(Icons.check, color: Colors.green)
+                    ? const Icon(Icons.check, color: Colors.green)
                     : null,
                 onTap: () {
                   setState(() {
@@ -216,27 +249,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Profile',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         elevation: 0,
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             onPressed: _editProfile,
-            icon: Icon(Icons.edit),
+            icon: const Icon(Icons.edit),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             // Profile Header
             Container(
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.green.shade50,
                 borderRadius: BorderRadius.circular(16),
@@ -247,39 +281,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     radius: 50,
                     backgroundColor: Colors.green,
                     child: Text(
-                      'JD',
-                      style: TextStyle(
+                      AuthService().currentUser?.email[0].toUpperCase() ?? '?', // Use current user's initial
+                      style: const TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text(
-                    'John Doe',
-                    style: TextStyle(
+                    AuthService().currentUser?.email ?? 'Guest User', // Display current user's email
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'john.doe@email.com',
+                    AuthService().currentUser?.email ?? 'N/A', // Display current user's email
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey.shade600,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.green,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(
-                      'Premium Member',
+                    child: const Text(
+                      'Premium Member', // This is static, you might want to make it dynamic
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -290,9 +324,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            
-            SizedBox(height: 30),
-            
+
+            const SizedBox(height: 30),
+
             // Menu Options
             Container(
               decoration: BoxDecoration(
@@ -302,7 +336,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   BoxShadow(
                     color: Colors.grey.shade200,
                     blurRadius: 10,
-                    offset: Offset(0, 5),
+                    offset: const Offset(0, 5),
                   ),
                 ],
               ),
@@ -313,8 +347,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: 'Addresses',
                     subtitle: 'Manage delivery addresses',
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Addresses clicked')),
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (ctx) => const AddressScreen()),
                       );
                     },
                   ),
@@ -325,7 +359,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle: 'Manage your payment options',
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Payment Methods clicked')),
+                        const SnackBar(content: Text('Payment Methods clicked')),
                       );
                     },
                   ),
@@ -345,7 +379,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle: 'Get help and contact support',
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Help & Support clicked')),
+                        const SnackBar(content: Text('Help & Support clicked')),
                       );
                     },
                   ),
@@ -359,16 +393,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         context: context,
                         applicationName: 'Vegetable Store',
                         applicationVersion: '1.0.0',
-                        applicationIcon: Icon(Icons.eco, color: Colors.green),
+                        applicationIcon: const Icon(Icons.eco, color: Colors.green),
                       );
                     },
                   ),
                 ],
               ),
             ),
-            
-            SizedBox(height: 30),
-            
+
+            const SizedBox(height: 30),
+
             // Logout Button
             SizedBox(
               width: double.infinity,
@@ -377,12 +411,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.logout),
@@ -398,8 +432,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
-            
-            SizedBox(height: 20),
+
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -414,7 +448,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     return ListTile(
       leading: Container(
-        padding: EdgeInsets.all(8),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: Colors.green.shade100,
           borderRadius: BorderRadius.circular(8),
@@ -423,16 +457,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       title: Text(
         title,
-        style: TextStyle(fontWeight: FontWeight.w500),
+        style: const TextStyle(fontWeight: FontWeight.w500),
       ),
       subtitle: Text(subtitle),
-      trailing: Icon(Icons.arrow_forward_ios, size: 16),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
       onTap: onTap,
     );
   }
 
   Widget _buildDivider() {
-    return Divider(
+    return const Divider(
       height: 1,
       indent: 72,
       endIndent: 16,

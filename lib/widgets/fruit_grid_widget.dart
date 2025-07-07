@@ -1,75 +1,80 @@
 import 'package:flutter/material.dart';
-import '../models/grocery_models.dart'; // Assuming FruitItem is defined here
-import 'fruit_card_widget.dart';
+import '../models/grocery_models.dart'; // Import FruitItem
 
 class FruitGridWidget extends StatelessWidget {
-  final List<FruitItem>? fruits;
-  final Function(FruitItem)? onFruitTap;
+  final List<FruitItem> fruits; // Accept a list of fruits
+  final Function(FruitItem) onBuy; // Changed from onFruitTap to onBuy
 
   const FruitGridWidget({
     Key? key,
-    this.fruits,
-    this.onFruitTap,
+    required this.fruits, // Make it required
+    required this.onBuy, // Updated property name
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final List<FruitItem> fruitList = fruits ?? _getDefaultFruits();
-
-    return Container(
-      height: 120,
+    return SizedBox(
+      height: 200, // Fixed height for the slider, consistent with vegetable slider
       child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: 4),
-        itemCount: fruitList.length,
+        scrollDirection: Axis.horizontal, // Changed from GridView to horizontal ListView
+        itemCount: fruits.length,
         itemBuilder: (context, index) {
-          return FruitCard(
-            fruit: fruitList[index],
-            onTap: onFruitTap,
+          final fruit = fruits[index];
+          return Container(
+            width: 150, // Fixed width for each card, consistent with vegetable slider
+            margin: const EdgeInsets.only(right: 16),
+            child: Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  // Removed mainAxisAlignment: MainAxisAlignment.center
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      fruit.image,
+                      style: const TextStyle(fontSize: 48), // Larger emoji
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      fruit.name,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    // Display Price per kilo
+                    Text(
+                      '₭${fruit.price.toStringAsFixed(0)} / kilo', // Display price with unit
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const Spacer(), // NEW: Spacer to push button to the bottom
+                    ElevatedButton(
+                      onPressed: () => onBuy(fruit), // Call onBuy when button is pressed
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        minimumSize: const Size(double.infinity, 35), // Full width button
+                      ),
+                      child: const Text('Add to Cart'), // Changed button text
+                    ),
+                  ],
+                ),
+              ),
+            ),
           );
         },
       ),
     );
-  }
-
-  List<FruitItem> _getDefaultFruits() {
-    return [
-      FruitItem(
-          name: 'Tomato',
-          image: '🍅',
-          description: 'A versatile and juicy red fruit.', // Added
-          price: 2.99, // Added
-          rating: 4.5), // Added
-      FruitItem(
-          name: 'Orange',
-          image: '🍊',
-          description: 'A citrus fruit packed with Vitamin C.', // Added
-          price: 1.50, // Added
-          rating: 4.7), // Added
-      FruitItem(
-          name: 'Banana',
-          image: '🍌',
-          description: 'A potassium-rich and energy-boosting fruit.', // Added
-          price: 0.79, // Added
-          rating: 4.8), // Added
-      FruitItem(
-          name: 'Avocado',
-          image: '🥑',
-          description: 'A creamy fruit, great for healthy fats.', // Added
-          price: 2.49, // Added
-          rating: 4.6), // Added
-      FruitItem(
-          name: 'Apple',
-          image: '🍎',
-          description: 'A crisp and sweet fruit, perfect for snacking.', // Added
-          price: 1.20, // Added
-          rating: 4.9), // Added
-      FruitItem(
-          name: 'Grapes',
-          image: '🍇',
-          description: 'Sweet and juicy berries, great in bunches.', // Added
-          price: 3.99, // Added
-          rating: 4.7), // Added
-    ];
   }
 }

@@ -1,44 +1,46 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app_food/screen/signup_screen.dart';
-
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/custom_text_field.dart';
 import 'grocery_home_screen.dart';
 import '../services/auth_service.dart';
 
-class LoginScreen extends StatefulWidget {
+class SignUpScreen extends StatefulWidget {
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  _SignUpScreenState createState() => _SignUpScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   bool _isLoading = false;
 
   final AuthService _authService = AuthService();
 
-  void _handleLogin() async {
+  void _handleSignUp() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
 
       try {
-        final bool loginSuccess = await _authService.loginUser(
+        final bool registrationSuccess = await _authService.registerUser(
           _emailController.text,
           _passwordController.text,
         );
 
-        if (loginSuccess) {
+        if (registrationSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Login successful!'),
+              content: Text('Sign up successful! You can now log in.'),
               backgroundColor: Color(0xFF4CAF50),
             ),
           );
+          // After successful signup, navigate to GroceryHomeScreen
+          // and clear the navigation stack.
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => GroceryHomeScreen()),
             (Route<dynamic> route) => false,
@@ -46,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Invalid email or password.'),
+              content: Text('Email already registered. Please use a different email or log in.'),
               backgroundColor: Colors.red,
             ),
           );
@@ -54,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
       } catch (error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('An error occurred: $error'),
+            content: Text('An error occurred during signup: $error'),
             backgroundColor: Colors.red,
           ),
         );
@@ -64,30 +66,6 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
-  }
-
-  void _handleForgetPassword() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Forget Password'),
-          content: const Text('Password reset functionality will be implemented here.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _handleSignUp() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => SignUpScreen()),
-    );
   }
 
   @override
@@ -100,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Form(
           key: _formKey,
           child: Column(
-            children: [
+            children: <Widget>[
               Container(
                 width: size.width,
                 height: size.height * 0.4,
@@ -143,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Sign In",
+                      "Sign Up",
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w600,
@@ -168,9 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 20),
-
                     CustomTextField(
                       controller: _passwordController,
                       label: "Password",
@@ -181,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           return 'Please enter your password';
                         }
                         if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
+                          return 'Password must be at least 6 characters long';
                         }
                         return null;
                       },
@@ -197,7 +173,33 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                       ),
                     ),
-
+                    const SizedBox(height: 20),
+                    CustomTextField(
+                      controller: _confirmPasswordController,
+                      label: "Confirm Password",
+                      hintText: "Re-enter your password",
+                      obscureText: _obscureConfirmPassword,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm your password';
+                        }
+                        if (value != _passwordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                          color: Colors.grey[600],
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
+                      ),
+                    ),
                     const SizedBox(height: 30),
 
                     Align(
@@ -206,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: 60,
                         height: 60,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleLogin,
+                          onPressed: _isLoading ? null : _handleSignUp,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF4CAF50),
                             foregroundColor: Colors.white,
@@ -233,33 +235,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 25),
 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        GestureDetector(
-                          onTap: _handleForgetPassword,
-                          child: const Text(
-                            "Forget password?",
-                            style: TextStyle(
-                              color: Color(0xFF666666),
-                              fontSize: 14,
-                            ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text(
+                          "Back to Login Screen",
+                          style: TextStyle(
+                            color: Color(0xFF4CAF50),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        GestureDetector(
-                          onTap: _handleSignUp,
-                          child: const Text(
-                            "Sign up",
-                            style: TextStyle(
-                              color: Color(0xFF4CAF50),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -275,6 +266,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 }
